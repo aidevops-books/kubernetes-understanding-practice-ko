@@ -1,0 +1,22 @@
+# Chapter 17 실습용. default Namespace의 Redis에는 API Pod와 허용 Label을 가진 작업만 접근한다.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: redis-allow-clients
+spec:
+  podSelector:
+    matchLabels:
+      app: cloudshop-redis
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app: cloudshop-api
+        - podSelector:
+            matchLabels:
+              cloudshop/redis-client: "true"
+      ports:
+        - protocol: TCP
+          port: 6379

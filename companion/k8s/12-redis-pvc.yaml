@@ -1,0 +1,47 @@
+# Chapter 12 실습용.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: cloudshop-redis-pvc
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cloudshop-redis
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: cloudshop-redis
+  template:
+    metadata:
+      labels:
+        app: cloudshop-redis
+    spec:
+      containers:
+        - name: redis
+          image: redis:7-alpine
+          volumeMounts:
+            - name: data
+              mountPath: /data
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: cloudshop-redis-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: cloudshop-redis
+spec:
+  selector:
+    app: cloudshop-redis
+  ports:
+    - port: 6379
+      targetPort: 6379

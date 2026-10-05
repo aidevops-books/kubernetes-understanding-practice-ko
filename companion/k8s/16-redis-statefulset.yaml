@@ -1,0 +1,62 @@
+# Chapter 16 실습용. 12장의 Redis Deployment(cloudshop-redis)를 삭제한 뒤 적용한다.
+# API가 접속하는 ClusterIP Service. 12장과 같은 정의이므로 12장을 마친 Cluster에서는 unchanged로 표시된다.
+apiVersion: v1
+kind: Service
+metadata:
+  name: cloudshop-redis
+spec:
+  selector:
+    app: cloudshop-redis
+  ports:
+    - port: 6379
+      targetPort: 6379
+---
+# Pod마다 고정 이름과 DNS를 주는 Headless Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: cloudshop-redis-hl
+spec:
+  clusterIP: None
+  selector:
+    app: cloudshop-redis
+  ports:
+    - port: 6379
+      targetPort: 6379
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: cloudshop-redis
+spec:
+  serviceName: cloudshop-redis-hl
+  replicas: 1
+  selector:
+    matchLabels:
+      app: cloudshop-redis
+  template:
+    metadata:
+      labels:
+        app: cloudshop-redis
+    spec:
+      containers:
+        - name: redis
+          image: redis:7-alpine
+          args: ["--appendonly", "yes"]
+          ports:
+            - containerPort: 6379
+          readinessProbe:
+            exec:
+              command: ["redis-cli", "PING"]
+            periodSeconds: 5
+          volumeMounts:
+            - name: data
+              mountPath: /data
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: 1Gi

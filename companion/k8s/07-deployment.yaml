@@ -1,0 +1,23 @@
+# Chapter 7 실습용.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cloudshop-api
+  labels:
+    app: cloudshop-api
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: cloudshop-api
+  template:
+    metadata:
+      labels:
+        app: cloudshop-api
+    spec:
+      containers:
+        - name: api
+          image: intro-api:1.0
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 3000

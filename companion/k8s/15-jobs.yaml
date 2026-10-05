@@ -1,0 +1,47 @@
+# Chapter 15 실습용. 12장의 cloudshop-redis Service가 먼저 있어야 한다.
+# 한 번 실행하는 Job: 현재 방문 횟수를 읽어 로그로 남긴다.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: visit-report
+spec:
+  backoffLimit: 2
+  activeDeadlineSeconds: 120
+  ttlSecondsAfterFinished: 600
+  template:
+    metadata:
+      labels:
+        cloudshop/redis-client: "true"   # 17장 NetworkPolicy가 허용하는 Label
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: report
+          image: redis:7-alpine
+          command: ["sh", "-c"]
+          args:
+            - echo "report at $(date -u +%FT%TZ) visit-count=$(redis-cli -h cloudshop-redis GET visit-count)"
+---
+# 일정에 따라 반복하는 CronJob: 5분마다 Redis 스냅샷(SAVE)을 요청한다.
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: redis-snapshot
+spec:
+  schedule: "*/5 * * * *"
+  timeZone: "Asia/Seoul"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 1
+  jobTemplate:
+    spec:
+      backoffLimit: 1
+      template:
+        metadata:
+          labels:
+            cloudshop/redis-client: "true"
+        spec:
+          restartPolicy: Never
+          containers:
+            - name: snapshot
+              image: redis:7-alpine
+              command: ["redis-cli", "-h", "cloudshop-redis", "SAVE"]

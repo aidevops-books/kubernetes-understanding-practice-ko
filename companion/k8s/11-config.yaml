@@ -1,0 +1,16 @@
+# Chapter 11 실습용.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cloudshop-config
+data:
+  REDIS_HOST: "cloudshop-redis"
+  LOG_LEVEL: "info"
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: cloudshop-db-secret
+type: Opaque
+stringData:
+  DB_PASSWORD: password123

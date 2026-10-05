@@ -1,0 +1,35 @@
+# Chapter 10 실습용.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cloudshop-web
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: cloudshop-web
+  template:
+    metadata:
+      labels:
+        app: cloudshop-web
+    spec:
+      containers:
+        - name: web
+          image: intro-web:1.0
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: API_UPSTREAM
+              value: cloudshop-api:80
+          ports:
+            - containerPort: 80
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: cloudshop-web
+spec:
+  selector:
+    app: cloudshop-web
+  ports:
+    - port: 80
+      targetPort: 80

@@ -1,0 +1,47 @@
+# Apply after 11-config.yaml and 12-redis-pvc.yaml, before 14-hpa.yaml.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cloudshop-api
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: cloudshop-api
+  template:
+    metadata:
+      labels:
+        app: cloudshop-api
+    spec:
+      containers:
+        - name: api
+          image: intro-api:1.0
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 3000
+          envFrom:
+            - configMapRef:
+                name: cloudshop-config
+          resources:
+            requests:
+              cpu: 250m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 256Mi
+          startupProbe:
+            httpGet:
+              path: /health
+              port: 3000
+            periodSeconds: 2
+            failureThreshold: 30
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 3000
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: 3000
+            periodSeconds: 5
